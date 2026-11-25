@@ -16,13 +16,13 @@ jobs:
         run: git config --global core.autocrlf input
       - uses: actions/checkout@v7
       - name: Install Cygwin build dependencies
-        id: cygwin
         uses: cygwin/cygwin-install-action@v7
         with:
+          install-dir: D:\cygwin
           platform: x86_64
           packages: autoconf automake gcc-core git make pkg-config libncurses-devel libjansson-devel zip
       - name: Build and package MTR
-        shell: ${{ steps.cygwin.outputs.root }}\bin\bash.exe --noprofile --norc -eo pipefail -o igncr {0}
+        shell: D:\cygwin\bin\bash.exe --noprofile --norc -eo pipefail -o igncr {0}
         run: |
           ./bootstrap.sh
           ./configure --without-gtk
