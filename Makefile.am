@@ -156,7 +156,7 @@ distdir-win: $(dist_windows_aux) mtr.exe mtr-packet.exe
 	cp $(dist_windows_aux) -t $(distwindir)
 	cp mtr.exe mtr-packet.exe -t $(distwindir)/bin
 	ldd mtr.exe mtr-packet.exe | awk '$$3 ~ /^\/(usr\/)?bin\// { print $$3 }' | sort -u | xargs cp -t $(distwindir)/bin
-	cp `find /usr/share/terminfo -name cygwin | xargs dirname` -r $(distwindir)/terminfo
+	cd /usr/share/terminfo && cp -L --parents */cygwin */xterm */xterm-256color "$(abs_builddir)/$(distwindir)/terminfo"
 
 #  Zip up a Windows binary distribution
 dist-windows-bin: distdir-win

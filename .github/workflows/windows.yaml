@@ -20,7 +20,7 @@ jobs:
         with:
           install-dir: D:\cygwin
           platform: x86_64
-          packages: autoconf automake gcc-core git make pkg-config libncurses-devel libjansson-devel zip
+          packages: autoconf automake gcc-core git make pkg-config libncurses-devel libjansson-devel terminfo zip
       - name: Build and package MTR
         shell: D:\cygwin\bin\bash.exe --noprofile --norc -eo pipefail -o igncr {0}
         run: |
@@ -35,6 +35,12 @@ jobs:
           $staging = Join-Path $env:RUNNER_TEMP 'mtr-windows-smoke'
           Expand-Archive -LiteralPath $archive.FullName -DestinationPath $staging
           $bundle = Join-Path $staging $archive.BaseName
+          $terminalEntries = Get-ChildItem -LiteralPath (Join-Path $bundle 'terminfo') -File -Recurse
+          foreach ($term in 'cygwin', 'xterm', 'xterm-256color') {
+            if ($term -notin $terminalEntries.Name) {
+              throw "Missing terminal definition: $term"
+            }
+          }
           $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
           & (Join-Path $bundle 'mtr.bat') --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
