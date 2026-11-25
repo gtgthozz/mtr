@@ -1,0 +1,52 @@
+name: Build Windows binaries
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Preserve Unix line endings
+        run: git config --global core.autocrlf input
+      - uses: actions/checkout@v7
+      - name: Install Cygwin build dependencies
+        id: cygwin
+        uses: cygwin/cygwin-install-action@v7
+        with:
+          platform: x86_64
+          packages: autoconf automake gcc-core git make pkg-config libncurses-devel libjansson-devel zip
+      - name: Build and package MTR
+        shell: ${{ steps.cygwin.outputs.root }}\bin\bash.exe --noprofile --norc -eo pipefail -o igncr {0}
+        run: |
+          ./bootstrap.sh
+          ./configure --without-gtk
+          make -j "$(nproc)"
+          make dist-windows-bin
+      - name: Check the packaged Windows executables
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem -File -Filter 'mtr-*-win-x86_64.zip'
+          $staging = Join-Path $env:RUNNER_TEMP 'mtr-windows-smoke'
+          Expand-Archive -LiteralPath $archive.FullName -DestinationPath $staging
+          $bundle = Join-Path $staging $archive.BaseName
+          $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
+          & (Join-Path $bundle 'mtr.bat') --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $reply = '30 check-support feature version' | & (Join-Path $bundle 'bin\mtr-packet.exe')
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ($reply -notmatch '^30 feature-support support \S+$') {
+            throw "Unexpected mtr-packet response: $reply"
+          }
+      - name: Upload Windows ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: mtr-windows-x86_64
+          path: mtr-*-win-x86_64.zip
+          if-no-files-found: error
+          compression-level: 0

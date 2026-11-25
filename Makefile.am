@@ -144,7 +144,7 @@ dist_windows_aux = \
 	$(srcdir)/AUTHORS \
 	$(srcdir)/BSDCOPYING \
 	$(srcdir)/COPYING \
-	$(srcdir)/README \
+	$(srcdir)/README.md \
 	$(srcdir)/NEWS
 
 distwindir = $(distdir)-win-$(host_cpu)
@@ -155,7 +155,7 @@ distdir-win: $(dist_windows_aux) mtr.exe mtr-packet.exe
 	mkdir -p $(distwindir) $(distwindir)/bin $(distwindir)/terminfo
 	cp $(dist_windows_aux) -t $(distwindir)
 	cp mtr.exe mtr-packet.exe -t $(distwindir)/bin
-	ldd mtr.exe | grep -v cygdrive | awk '{ print $$3 }' | xargs cp -t $(distwindir)/bin
+	ldd mtr.exe mtr-packet.exe | awk '$$3 ~ /^\/(usr\/)?bin\// { print $$3 }' | sort -u | xargs cp -t $(distwindir)/bin
 	cp `find /usr/share/terminfo -name cygwin | xargs dirname` -r $(distwindir)/terminfo
 
 #  Zip up a Windows binary distribution
